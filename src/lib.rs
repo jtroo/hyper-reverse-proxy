@@ -205,6 +205,7 @@ fn create_proxied_request<B>(
     Ok(request)
 }
 
+#[cfg(not(feature = "tls"))]
 pub async fn call(
     client_ip: IpAddr,
     forward_uri: &str,
@@ -214,6 +215,27 @@ pub async fn call(
 
     let client = Client::new();
     let response = client.request(proxied_request).await?;
+    let proxied_response = create_proxied_response(response);
+    Ok(proxied_response)
+}
+
+#[cfg(feature = "tls")]
+pub async fn call(
+    client_ip: IpAddr,
+    forward_uri: &str,
+    request: Request<Body>,
+) -> Result<Response<Body>, ProxyError> {
+    // 4 is number of blocking DNS threads
+    let response = if forward_uri.contains("https://") {
+        let https = hyper_tls::HttpsConnector::new();
+        let client = Client::builder().build::<_, hyper::Body>(https);
+        let proxied_request = create_proxied_request(client_ip, &forward_uri, request)?;
+        client.request(proxied_request).await?
+    } else {
+        let client = Client::new();
+        let proxied_request = create_proxied_request(client_ip, &forward_uri, request)?;
+        client.request(proxied_request).await?
+    };
     let proxied_response = create_proxied_response(response);
     Ok(proxied_response)
 }

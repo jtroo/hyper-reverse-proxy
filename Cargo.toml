@@ -19,10 +19,14 @@ include = [
 ]
 
 [dependencies]
-hyper = { version = "0.14", features = ["client", "http1", "http2", "tcp" ] }
+hyper = { version = "0.14", features = ["client", "http1", "http2", "tcp"] }
+hyper-tls = { version = "0.5", optional = true }
 lazy_static = "1.4"
 unicase = "2.6"
 
 [dev-dependencies]
 hyper = { version = "0.14", features = ["client", "http1", "http2", "tcp", "server" ] }
 tokio = { version = "1", features = ["full"] }
+
+[features]
+tls = ["hyper-tls"]
